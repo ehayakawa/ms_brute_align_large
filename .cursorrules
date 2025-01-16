@@ -1,8 +1,0 @@
-## stick to the structure of the code
-main.py
-graph_construction.py
-community_detection.py
-mass_feature_aligner.py
-
-## only suggest adding new files when it is necessary
-
