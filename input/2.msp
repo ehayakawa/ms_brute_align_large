@@ -1,0 +1,15 @@
+Name: Compound1
+PrecursorMZ: 100.05
+RetentionTime: 602
+Signal_intensity: 55
+Num peaks: 2
+100.1 12
+101.1 22
+
+Name: Compound2
+PrecursorMZ: 149.95
+RetentionTime: 604
+Signal_intensity: 75
+Num peaks: 2
+150.1 18
+151.1 28

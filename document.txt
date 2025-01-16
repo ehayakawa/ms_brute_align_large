@@ -1,0 +1,86 @@
+Project Documentation
+Project Purpose
+The purpose of this project is to align mass features from multiple Liquid Chromatography-Mass Spectrometry (LC-MS) datasets. Each dataset contains a list of mass features, which are entities representing compounds found in LC-MS analyses. These mass features are characterized by m/z values, retention times, and potentially fragment spectra (MS2 spectra). Due to variations in the analytical conditions across different locations, the retention times and m/z values might shift slightly. Therefore, the goal is to identify and align corresponding chemical entities across these datasets by accepting slight variations within defined tolerances.
+
+Key Objectives
+Align Mass Features: Align the same chemical entities across different LC-MS datasets.
+Tolerance Handling: Accept slight variations in m/z values and retention times.
+Efficient Handling: Handle large datasets efficiently.
+Similarity Judgement: Use m/z, retention time, and fragment spectra to judge similarity.
+Output: Produce data tables with aligned mass features and their signal intensities and observed m/z values across samples.
+Code Structure
+
+
+The code is divided into several modules for clarity and maintainability:
+
+read_files.py: Functions for reading MGF and MSP files.
+graph_construction.py: Functions for constructing the similarity graph.
+community_detection.py: Functions for performing community detection and generating output tables.
+clique_detection.py: Functions for performing clique detection and generating output tables.
+main.py: The main script that ties everything together.
+Detailed Summary
+1. read_files.py
+This module contains functions to read MGF and MSP files, collect all files from a directory, and read features from those files.
+
+Functions:
+read_mgf(file_path): Reads an MGF file and extracts mass features.
+read_msp(file_path): Reads an MSP file and extracts mass features.
+collect_files(directory): Collects all MGF and MSP files from the specified directory.
+read_features(directory): Reads features from all collected files and returns them as a list of lists.
+2. graph_construction.py
+This module contains functions to construct a similarity graph from the extracted mass features.
+
+Functions:
+similarity_score(feature1, feature2, mz_tolerance, rt_tolerance): Computes a similarity score between two mass features based on m/z, retention time, and fragment spectra.
+cosine_similarity(spectrum1, spectrum2): Computes the cosine similarity between two fragment spectra.
+construct_graph(all_list_features): Constructs a graph where nodes represent mass features and edges represent similarities between features from different datasets.
+3. community_detection.py
+This module contains functions to perform community detection on the similarity graph and generate output tables.
+
+Functions:
+detect_communities(G): Performs community detection on the graph using the Louvain algorithm.
+generate_community_tables(G, partition, all_list_features): Generates output tables with aligned mass features and their signal intensities and observed m/z values using community detection.
+4. clique_detection.py
+This module contains functions to perform clique detection on the similarity graph and generate output tables.
+
+Functions:
+find_cliques(G): Finds all maximal cliques in the graph.
+generate_clique_tables(G, cliques, all_list_features): Generates output tables with aligned mass features and their signal intensities and observed m/z values using clique detection.
+5. main.py
+This is the main script that integrates all the modules to perform the alignment of mass features and generate the final output tables.
+
+Workflow:
+Read features from all files in the specified directory.
+Construct the similarity graph from the extracted features.
+Perform community detection and generate output tables.
+Perform clique detection and generate output tables.
+Print the aligned features and m/z values for both community detection and clique detection.
+Example Usage
+To run the project, place your MGF and MSP files in a directory, update the directory variable in main.py, and execute main.py.
+
+python
+Copy code
+# Example usage
+directory = 'path_to_your_directory'
+all_list_features = read_features(directory)
+
+# Construct the graph
+G = construct_graph(all_list_features)
+
+# Community detection
+partition = detect_communities(G)
+aligned_features_community, aligned_mz_community = generate_community_tables(G, partition, all_list_features)
+print("Aligned features using community detection:")
+print(aligned_features_community)
+print("Aligned m/z values using community detection:")
+print(aligned_mz_community)
+
+# Clique detection
+cliques = find_cliques(G)
+aligned_features_clique, aligned_mz_clique = generate_clique_tables(G, cliques, all_list_features)
+print("Aligned features using clique detection:")
+print(aligned_features_clique)
+print("Aligned m/z values using clique detection:")
+print(aligned_mz_clique)
+Conclusion
+This project provides a systematic approach to align mass features from multiple LC-MS datasets, leveraging both community detection and clique detection methods. The modular structure ensures easy maintenance and extensibility, making it a valuable tool for chemists and bioinformaticians working with LC-MS data.
