@@ -32,5 +32,8 @@ var/
 *.xls
 *.csv
 
+# System files
+.DS_Store
+
 # Local ignore file
 .gitignore_local
