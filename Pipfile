@@ -4,12 +4,13 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pandas = "*"
-networkx = "*"
 scipy = "*"
 community = "*"
 python-louvain = "*"
+networkx = "*"
 numpy = "*"
+matplotlib = "*"
+pandas = "*"
 
 [dev-packages]
 
