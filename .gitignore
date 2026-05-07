@@ -5,6 +5,11 @@ __pycache__/
 *.so
 .Python
 env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
 build/
 develop-eggs/
 dist/
@@ -37,3 +42,6 @@ var/
 
 # Local ignore file
 .gitignore_local
+
+# Legacy/reference code (not part of main pipeline)
+legacy_code/

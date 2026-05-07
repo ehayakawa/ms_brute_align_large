@@ -1,16 +1,128 @@
-## Background:
+# Large-Scale Mass Spectrometry Feature Alignment
 
+This project provides a graph-based approach for aligning mass spectrometry features across multiple datasets. It uses community detection and clique finding algorithms to identify related features and group them together.
+
+## Features
+
+- Read mass spectrometry features from Excel files
+- Build a graph representation of features based on m/z and retention time similarity
+- **MS/MS spectral matching** using cosine similarity for enhanced accuracy
+- Detect communities using the Louvain algorithm
+- Find cliques in the feature graph
+- Align features based on community or clique membership
+- Generate visualizations of the feature graph and aligned features
+- Create intensity heatmaps for aligned feature groups
+
+## Installation
+
+1. Clone this repository:
+```bash
+git clone https://github.com/ehayakawa/ms_brute_align_large.git
+cd ms_brute_align_large
+```
+
+2. Install the required dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+## Usage
+
+### Basic Usage
+
+```bash
+python main.py --input-dir "path/to/excel/files" --visualize
+```
+
+### Command Line Arguments
+
+- `--input-dir`: Directory containing Excel files with mass features (required)
+- `--output-dir`: Directory to save output files (default: "output")
+- `--mz-tolerance`: m/z tolerance for feature matching in Da (default: 0.01)
+- `--rt-tolerance`: RT tolerance for feature matching in minutes (default: 0.5)
+- `--min-datasets`: Minimum number of datasets for a valid feature group (default: 2)
+- `--visualize`: Generate visualizations (flag)
+
+## Input Format
+
+The input Excel files should contain mass spectrometry features with the following columns:
+- `Peak ID`: Unique identifier for the feature
+- `Scan`: Scan number
+- `RT [min]`: Retention time in minutes
+- `Precursor m/z`: Mass-to-charge ratio
+- `Height`: Signal intensity
+- `MSMS spectrum` (optional): Fragment spectrum in format `"m/z1 intensity1;m/z2 intensity2;..."`
+
+## Output Files
+
+The program generates the following output files:
+
+- `summary.md`: Summary statistics for each input file
+- `aligned_features_community.tsv`: Features aligned using community detection
+- `aligned_features_clique.tsv`: Features aligned using clique detection
+- `graph.pkl`: Serialized NetworkX graph object
+- `partition.pkl`: Serialized community partition data
+- `initial_graph.png`: Visualization of the initial feature graph (if `--visualize`)
+- `community_graph.png`: Visualization of the graph with communities (if `--visualize`)
+- `clique_graph.png`: Visualization of the graph with cliques (if `--visualize`)
+- `intensity_heatmap_*.png`: Heatmaps of feature intensities (if `--visualize`)
+
+The TSV output includes MS/MS matching information when available (MSMS_Matches count and MSMS_Details with cosine scores).
+
+## Project Structure
+
+### Core Pipeline
+- `main.py`: Main script for running the alignment process
+- `read_files.py`: Functions for reading Excel files and extracting features
+- `graph_construction.py`: Graph building from mass spectrometry features
+- `spectral_similarity.py`: MS/MS cosine similarity calculations
+- `community_detection.py`: Community detection using Louvain algorithm
+- `clique_detection.py`: Maximal clique finding for strict grouping
+- `mass_feature_aligner.py`: Functions for aligning features and writing output
+- `visualize_graph.py`: Visualization functions for graphs and heatmaps
+
+### Standalone Tools
+- `community_report.py`: CLI tool for detailed community analysis
+- `simple_community_report.py`: CLI tool for simplified report generation
+- `test_msms_tsv.py`: Test utilities for MS/MS TSV validation
+
+## Example
+
+```bash
+python main.py --input-dir "input_data" --mz-tolerance 0.01 --rt-tolerance 0.5 --visualize
+```
+
+This will process all Excel files in the "input_data" directory, build a feature graph with the specified tolerances, detect communities and cliques, align features, and generate visualizations.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+
+## Background
 Mass feature is an entity of compound found in LC-MS. Mass feature always have m/z value of ionized compound as well as retention time. Mass feature might have fragment spectrum ( also known as MS2 spectrum).
 In this project, there are multiple lists of mass features derived from distinct LC-MS data. One LC-MS data results in one list of mass feature. The samples analyzed on each location are essentially same, meaning chemical composition of those samples are similar. LC-MS data were acquired from different locations, so retention time may shift.
 
 
 ## What I want to do:
 
-I want to build a program/system to align such lists of mass features. “Align” means that same chemical entities found in each LC-MS data which is list of mass feature are distinguished as identical chemical entity based on m/z  and retention time.  Observed m/z value of compound  may shift slightly. For example, even compound X whose theoretical m/z is 100.000 is found in two list of mass features,  m/z of mass features can be slightly different for example m/z = 100.01 or m/z = 99.98.  Therefore we must accept slight m/z error by setting tolerance.  About retention time, because LC-MS could be perfomed at different locations, so same chemical entity can be observed in different retention time.  We must accept retention time difference about 1 min, but the tolerance must be changed if necessary.
+I want to build a program/system to align such lists of mass features. "Align" means that same chemical entities found in each LC-MS data which is list of mass feature are distinguished as identical chemical entity based on m/z  and retention time.  Observed m/z value of compound  may shift slightly. For example, even compound X whose theoretical m/z is 100.000 is found in two list of mass features,  m/z of mass features can be slightly different for example m/z = 100.01 or m/z = 99.98.  Therefore we must accept slight m/z error by setting tolerance.  About retention time, because LC-MS could be perfomed at different locations, so same chemical entity can be observed in different retention time.  We must accept retention time difference about 1 min, but the tolerance must be changed if necessary.
 
 After alignment , a data table whose each row corresponds chemical entities observed over LC-MS analyses and and each column means signal intensity of the corresponding mass features in each samples will be produce.
 
+
 ## Workflow
+
+A detailed workflow chart is available in [workflow_chart.md](workflow_chart.md).
+
+The alignment process follows these main steps:
+
+1. **Input Handling**: Read files and extract mass features (m/z, RT, spectra)
+2. **Graph Construction**: Create nodes for features, connect similar features with edges
+3. **Feature Grouping**: Apply community or clique detection algorithms
+4. **Output Generation**: Create alignment tables with grouped features
+
+## Project Overview
 
 ### read input files
 
@@ -43,33 +155,9 @@ Graph representation:
 - Matching features are connected by edges
 - Example: mf-A1 forms edges with both mf-B1 and mf-B4
 
-This graph structure captures all potential matches between features, allowing for later resolution of multiple matches through clique or community detection.
 
-### Compare mass features across multiple datasets
 
-Mass features are compared across all lists (A, B, C, D, etc.) using two key parameters:
-1. m/z value (mass-to-charge ratio)
-2. retention time (RT)
-
-For example:
-- Consider a mass feature mf-A1 from list A with m/z = 100.01 and RT = 5.2 min
-- It is compared against features in all other lists using defined tolerances:
-  - m/z tolerance: ±0.01
-  - RT tolerance: ±1.0 min
-
-Matching process across multiple lists:
-1. Matches found in list B:
-   - mf-B1 (m/z: 100.00, RT: 5.1 min)
-   - mf-B4 (m/z: 100.02, RT: 5.3 min)
-
-2. Matches found in list C:
-   - mf-C2 (m/z: 100.01, RT: 5.4 min)
-
-3. Matches found in list D:
-   - mf-D3 (m/z: 99.99, RT: 5.0 min)
-   - mf-D7 (m/z: 100.02, RT: 5.2 min)
-
-Graph representation:
+### Graph representation:
 - Each mass feature becomes a node in the graph
 - Matching features are connected by edges
 - Example network for mf-A1:
@@ -128,11 +216,26 @@ This approach uses community detection algorithms with a hybrid strategy for han
      - Reasonable RT distribution
      - Minimum community size
 
+### MS/MS Spectral Matching
+
+When MS/MS data is available, the system uses a **two-case matching approach**:
+
+1. **Case 1: No MS/MS data** - Edge weight based on m/z and RT proximity
+2. **Case 2: Both features have MS/MS** - Edge weight based on cosine similarity
+
+MS/MS edges are **prioritized** over m/z/RT edges when resolving multiple connections, ensuring structurally similar compounds are matched over proximity-based matches.
+
+**Cosine similarity parameters:**
+- `cosine_threshold`: Minimum similarity for valid MS/MS match (default: 0.5)
+- `min_shared_peaks`: Minimum shared peaks required (default: 3)
+
 ### Key Parameters
 - m/z tolerance: ±0.01 (adjustable)
 - RT tolerance: ±1.0 min (adjustable)
 - Minimum community size: 3 features
 - Maximum m/z variance within community
+- Cosine threshold: 0.5 (for MS/MS matching)
+- Minimum shared peaks: 3 (for MS/MS matching)
 
 ### Example Resolution Process
 
@@ -166,87 +269,7 @@ Please   propose strategy to deal with alighment with such large dataset.
 
 
 
-# workflow
 
-## Input handling
-
-* read files from folder
-* make a list of mass features from each file
-* each feature retain id, m/z, rt, fragment spectrum
-
-## Graph construction
-
-* Create KDTree for each feature list
-* create all possible pair of feature lists
-
-* compair features based on RT, mz (frag spec not used yet)
-* if it pass threshold add edge (feature - feature))
-
-## separate feature groups
-
-* detect clique or communities (groups)) in graph
-* separate groups
-
-* export as table
-
-
-## Mermaid
-
-
-graph TD
-    A[Read MS Data Files] --> B[Construct Graph]
-    B --> C[Community Detection]
-    B --> D[Clique Detection]
-
-    C --> E[Generate Community Tables]
-    D --> F[Generate Clique Tables]
-
-    E --> G[Write Community TSV]
-    F --> H[Write Clique TSV]
-
-    G --> I[Print Community Summary]
-    H --> J[Print Clique Summary]
-
-    subgraph Graph Construction
-    B1[Create Nodes for Features]
-    B2[Build KD-Trees]
-    B3[Add Edges based on Similarity]
-    B1 --> B2 --> B3
-    end
-
-    subgraph Community Detection
-    C1[Apply Louvain Method]
-    C2[Group Features]
-    C1 --> C2
-    end
-
-    subgraph Clique Detection
-    D1[Find Maximal Cliques]
-    D2[Group Features]
-    D1 --> D2
-    end
-
-    subgraph Generate Tables
-    E1[Align Features]
-    E2[Calculate Average m/z]
-    E3[Calculate Average Intensity]
-    E1 --> E2 --> E3
-    F1[Align Features]
-    F2[Calculate Average m/z]
-    F3[Calculate Average Intensity]
-    F1 --> F2 --> F3
-    end
-
-    subgraph Output
-    G1[Write Group ID]
-    G2[Write Feature Indices]
-    G3[Write m/z Values]
-    G1 --> G2 --> G3
-    H1[Write Group ID]
-    H2[Write Feature Indices]
-    H3[Write m/z Values]
-    H1 --> H2 --> H3
-    end
 
 ### Handling Multiple Feature Connections
 
